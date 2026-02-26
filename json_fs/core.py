@@ -35,6 +35,8 @@ def execute(request_dict):
             result = operations.stat_path(request_obj.path)
         elif action == "exists":
             result = operations.path_exists(request_obj.path)
+        elif action == "schema":
+            result = FileSystemRequestAdapter.json_schema()
         else:
             return _error_response(request_dict, ValueError, f"Unknown action: '{action}'")
             

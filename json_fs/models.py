@@ -49,6 +49,9 @@ class ExistsRequest(BaseModel):
     action: Literal["exists"]
     path: str
 
+class SchemaRequest(BaseModel):
+    action: Literal["schema"]
+
 FileSystemRequestType = Union[
     ReadRequest,
     WriteRequest,
@@ -60,6 +63,7 @@ FileSystemRequestType = Union[
     MoveRequest,
     StatRequest,
     ExistsRequest,
+    SchemaRequest,
 ]
 
 FileSystemRequest = Annotated[FileSystemRequestType, Field(discriminator="action")]
