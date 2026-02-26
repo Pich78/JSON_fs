@@ -1,47 +1,40 @@
 import json
+from pydantic import ValidationError
 from . import operations
+from .models import FileSystemRequestAdapter
 
 def execute(request_dict):
     """
     Executes a single filesystem operation defined by the JSON/dict payload.
     """
-    if "action" not in request_dict:
-        return _error_response(request_dict, ValueError, "Missing 'action' key in request")
+    try:
+        request_obj = FileSystemRequestAdapter.validate_python(request_dict)
+    except ValidationError as e:
+        return _error_response(request_dict, type(e), str(e))
         
-    action = request_dict["action"]
-    path = request_dict.get("path")
+    action = request_obj.action
     
     try:
         if action == "read":
-            binary = request_dict.get("binary", False)
-            result = operations.read_file(path, binary=binary)
+            result = operations.read_file(request_obj.path, binary=request_obj.binary)
         elif action == "write":
-            content = request_dict.get("content", "")
-            binary = request_dict.get("binary", False)
-            result = operations.write_file(path, content, binary=binary)
+            result = operations.write_file(request_obj.path, request_obj.content, binary=request_obj.binary)
         elif action == "append":
-            content = request_dict.get("content", "")
-            binary = request_dict.get("binary", False)
-            result = operations.append_file(path, content, binary=binary)
+            result = operations.append_file(request_obj.path, request_obj.content, binary=request_obj.binary)
         elif action == "list":
-            result = operations.list_dir(path)
+            result = operations.list_dir(request_obj.path)
         elif action == "delete":
-            result = operations.delete_path(path)
+            result = operations.delete_path(request_obj.path)
         elif action == "mkdir":
-            parents = request_dict.get("parents", False)
-            result = operations.make_dir(path, parents=parents)
+            result = operations.make_dir(request_obj.path, parents=request_obj.parents)
         elif action == "copy":
-            source = request_dict.get("source")
-            destination = request_dict.get("destination")
-            result = operations.copy_path(source, destination)
+            result = operations.copy_path(request_obj.source, request_obj.destination)
         elif action == "move":
-            source = request_dict.get("source")
-            destination = request_dict.get("destination")
-            result = operations.move_path(source, destination)
+            result = operations.move_path(request_obj.source, request_obj.destination)
         elif action == "stat":
-            result = operations.stat_path(path)
+            result = operations.stat_path(request_obj.path)
         elif action == "exists":
-            result = operations.path_exists(path)
+            result = operations.path_exists(request_obj.path)
         else:
             return _error_response(request_dict, ValueError, f"Unknown action: '{action}'")
             
