@@ -36,7 +36,21 @@ def execute(request_dict):
         elif action == "exists":
             result = operations.path_exists(request_obj.path)
         elif action == "schema":
-            result = FileSystemRequestAdapter.json_schema()
+            if request_obj.tool:
+                from .models import MODEL_CLASSES
+                if request_obj.tool not in MODEL_CLASSES:
+                    return _error_response(request_dict, ValueError, f"Unknown tool: '{request_obj.tool}'")
+                result = MODEL_CLASSES[request_obj.tool].model_json_schema()
+            else:
+                from .models import MODEL_CLASSES
+                tools_list = []
+                for name, cls in MODEL_CLASSES.items():
+                    doc = cls.__doc__.strip() if cls.__doc__ else name
+                    tools_list.append({
+                        "tool": name,
+                        "description": doc
+                    })
+                result = {"tools": tools_list}
         else:
             return _error_response(request_dict, ValueError, f"Unknown action: '{action}'")
             
